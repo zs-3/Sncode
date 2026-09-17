@@ -1,0 +1,121 @@
+apply plugin: "org.teavm"
+
+dependencies {
+    implementation project(":core")
+    implementation ("com.github.xpenatan.gdx-teavm:backend-teavm:$gdxTeavmVersion") {
+        exclude group: "com.badlogicgames.gdx", module: "gdx"
+    }
+    implementation "com.badlogicgames.gdx:gdx:$gdxVersion"
+}
+
+teavm {
+    all {
+        mainClass = "com.sticknodes.viewer.teavm.TeaVMLauncher"
+    }
+    js {
+        addedToWebApp = true
+        obfuscated = false
+        targetFileName = "app.js"
+    }
+}
+
+task buildJavaScript {
+    dependsOn "generateJavaScript"
+
+    doLast {
+        mkdir "$buildDir/dist/webapp"
+        copy {
+            from "$buildDir/generated/teavm/js"
+            into "$buildDir/dist/webapp"
+        }
+        mkdir "$buildDir/dist/webapp/assets"
+        copy {
+            from "$projectDir/../assets"
+            into "$buildDir/dist/webapp/assets"
+        }
+
+        // Create index.html
+        file("$buildDir/dist/webapp/index.html").text = '''<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Stick Nodes Viewer</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #1e1e24;
+            font-family: sans-serif;
+            color: #ffffff;
+        }
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        canvas {
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+        }
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px;
+            border-radius: 6px;
+        }
+        button, input {
+            margin-right: 5px;
+            margin-bottom: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <input type="file" id="filePicker" accept=".nodes">
+        <button id="btnReset">Reset View</button>
+    </div>
+    <div id="canvas-container"></div>
+    <script src="app.js"></script>
+    <script>
+        document.getElementById('filePicker').addEventListener('change', function(e) {
+            var file = e.target.files[0];
+            if (!file) return;
+            var reader = new FileReader();
+            reader.onload = function(evt) {
+                var arrayBuffer = evt.target.result;
+                var bytes = new Uint8Array(arrayBuffer);
+                if (window.loadNodesBytes) {
+                    window.loadNodesBytes(bytes);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        document.getElementById('btnReset').addEventListener('click', function() {
+            if (window.resetViewerCamera) {
+                window.resetViewerCamera();
+            }
+        });
+    </script>
+</body>
+</html>
+'''
+    }
+}
+
+task run {
+    dependsOn buildJavaScript
+    doLast {
+        println "WebApplication built successfully at $buildDir/dist/webapp"
+    }
+}
