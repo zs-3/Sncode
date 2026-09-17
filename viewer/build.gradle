@@ -1,0 +1,36 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+        maven { url "https://jitpack.io" }
+    }
+    dependencies {
+        classpath 'org.teavm:teavm-gradle-plugin:0.11.0'
+    }
+}
+
+allprojects {
+    apply plugin: "eclipse"
+
+    version = '1.0.0'
+    ext {
+        appName = "Stick Nodes Viewer"
+        gdxVersion = '1.12.1'
+        gdxTeavmVersion = '1.1.0'
+        teavmVersion = '0.11.0'
+    }
+
+    repositories {
+        mavenCentral()
+        maven { url "https://jitpack.io" }
+    }
+}
+
+subprojects {
+    apply plugin: "java-library"
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+}
