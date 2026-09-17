@@ -1,66 +1,73 @@
 package com.sticknodes.viewer;
 
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.math.Vector2;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 
 public class StickNode {
-    public static final int LIMB_SEGMENT = 0;
-    public static final int LIMB_CIRCLE = 1;
-    public static final int LIMB_CURVE = 2;
-    public static final int LIMB_POLY = 3;
+    // 8 Original Limb Types
+    public static final int LIMB_ROUNDED_SEGMENT = 0;
+    public static final int LIMB_SEGMENT = 1;
+    public static final int LIMB_CIRCLE = 2;
+    public static final int LIMB_TRIANGLE = 3;
+    public static final int LIMB_FILLED_CIRCLE = 4;
+    public static final int LIMB_ELLIPSE = 5;
+    public static final int LIMB_TRAPEZOID = 6;
+    public static final int LIMB_POLYGON = 7;
 
     private Stickfigure stickfigure;
     private StickNode parentNode;
     private final ArrayList<StickNode> childrenNodes = new ArrayList<>();
 
-    private int limbType = LIMB_SEGMENT;
-    private int drawOrderIndex;
-    private boolean isStatic;
-    private boolean isStretchy;
-    private boolean isFloaty;
-    private boolean isSmartStretch;
-    private boolean smartStretchDoNotApply;
-    private boolean smartStretchResetImpulse;
-    private boolean useSegmentColor;
-    private boolean useCircleOutline;
-    private boolean circleIsHollow;
-    private boolean useGradient;
-    private boolean gradientReversed;
-    private int gradientMode;
-    private boolean useSegmentScale;
+    // Full Node Option Fields
+    public int limbType = LIMB_ROUNDED_SEGMENT;
+    public int drawOrderIndex;
+    public boolean isStatic;
+    public boolean isStretchy;
+    public boolean isFloaty;
+    public boolean isSmartStretch;
+    public boolean smartStretchDoNotApply;
+    public boolean smartStretchResetImpulse;
+    public boolean useSegmentColor;
+    public boolean useCircleOutline;
+    public boolean circleIsHollow;
+    public boolean useGradient;
+    public boolean gradientReversed;
+    public int gradientMode;
+    public boolean useSegmentScale;
 
-    private float localX;
-    private float localY;
-    private float segmentScale = 1.0f;
-    private float defaultLength = 20.0f;
-    private float length = 20.0f;
-    private int defaultThickness = 10;
-    private int thickness = 10;
-    private int curveRadius;
-    private int defaultCurveRadius;
-    private boolean segmentCurveCirculization;
-    private int segmentCurvePolyfillPrecision = 1;
-    private boolean halfArc;
-    private int rightTriangleDirection;
-    private boolean triangleUpsideDown;
-    private float trapezoidThickness1 = 10.0f;
-    private float trapezoidThickness2 = 10.0f;
-    private float trapezoidRatio = 1.0f;
-    private boolean trapezoidAsymmetric;
-    private boolean isBranchLocked;
-    private boolean isAngleLocked;
-    private boolean isDragLocked;
-    private float localAngle;
-    private float defaultAngle;
-    private int numPolygonVertices = 3;
+    public float localX;
+    public float localY;
+    public float segmentScale = 1.0f;
+    public float defaultLength = 20.0f;
+    public float length = 20.0f;
+    public int defaultThickness = 10;
+    public int thickness = 10;
+    public int curveRadius;
+    public int defaultCurveRadius;
+    public boolean segmentCurveCirculization;
+    public int segmentCurvePolyfillPrecision = 1;
+    public boolean halfArc;
+    public int rightTriangleDirection;
+    public boolean triangleUpsideDown;
+    public float trapezoidThickness1 = 10.0f;
+    public float trapezoidThickness2 = 10.0f;
+    public float trapezoidRatio = 1.0f;
+    public boolean trapezoidAsymmetric;
+    public boolean isBranchLocked;
+    public boolean isAngleLocked;
+    public boolean isDragLocked;
+    public float localAngle;
+    public float defaultAngle;
+    public int numPolygonVertices = 3;
 
-    private final Color color = new Color(Color.BLACK);
-    private final Color secondaryColor = new Color(Color.BLACK);
+    public final Color color = new Color(Color.BLACK);
+    public final Color secondaryColor = new Color(Color.BLACK);
+    public final Color circleOutlineColor = new Color(Color.BLACK);
 
-    // Calculated absolute positions
+    // World Transforms
     public float worldX;
     public float worldY;
     public float worldAngle;
@@ -78,6 +85,14 @@ public class StickNode {
     public ArrayList<StickNode> getChildrenNodes() { return childrenNodes; }
     public boolean isMainNode() { return parentNode == null; }
 
+    public float getGlobalX() { return worldX; }
+    public float getGlobalY() { return worldY; }
+    public float getGlobalAngle() { return worldAngle; }
+    public float getLocalX() { return localX; }
+    public float getLocalY() { return localY; }
+    public Color getDisplayColor() { return useSegmentColor ? color : (stickfigure != null ? stickfigure.getColor() : Color.BLACK); }
+    public int getEffectiveThickness() { return thickness; }
+
     public int getLimbType() { return limbType; }
     public boolean isStatic() { return isStatic; }
     public boolean isStretchy() { return isStretchy; }
@@ -89,6 +104,95 @@ public class StickNode {
     public void setLocalAngle(float a) { this.localAngle = a; }
     public Color getColor() { return color; }
     public Color getSecondaryColor() { return secondaryColor; }
+
+    public ArrayList<StickNode> getCurveNodes() {
+        ArrayList<StickNode> list = new ArrayList<>();
+        int count = Math.max(1, (int) (Math.cbrt(Math.max(length * 0.5f, Math.abs(curveRadius) * 0.5f)) * 16 * 0.5f));
+        for (int i = 0; i <= count; i++) {
+            list.add(this);
+        }
+        return list;
+    }
+
+    public void recalculatePolyfillTriangles() {}
+
+    public void updatePosition(Stickfigure fig) {
+        if (fig != null) {
+            fig.updateTransforms(0, 0);
+        }
+    }
+
+    public void drawLimb(SNShapeRenderer renderer, float offsetX, float offsetY, float scale, boolean isSelected) {
+        if (isMainNode()) {
+            renderer.circle(worldX + offsetX, worldY + offsetY, getEffectiveThickness() * 0.5f * scale, 16, getDisplayColor(), getDisplayColor());
+            return;
+        }
+
+        StickNode parent = getParentNode();
+        if (parent == null) return;
+
+        float x1 = parent.worldX + offsetX;
+        float y1 = parent.worldY + offsetY;
+        float x2 = worldX + offsetX;
+        float y2 = worldY + offsetY;
+        float effThickness = getEffectiveThickness() * scale;
+        Color c1 = getDisplayColor();
+        Color c2 = useGradient ? secondaryColor : c1;
+
+        double radAngle = Math.toRadians(worldAngle);
+        float cosAngle = (float) Math.cos(radAngle);
+        float sinAngle = (float) Math.sin(radAngle);
+
+        switch (limbType) {
+            case LIMB_ROUNDED_SEGMENT:
+                renderer.myRoundedSegment(x1, y1, x2, y2, effThickness, cosAngle, sinAngle, useGradient, c1, c2);
+                break;
+            case LIMB_SEGMENT:
+                renderer.mySegment(x1, y1, x2, y2, effThickness, cosAngle, sinAngle, useGradient, c1, c2);
+                break;
+            case LIMB_CIRCLE:
+                renderer.circleOutline(x2, y2, length * scale, (length - effThickness) * scale, 24, c1);
+                break;
+            case LIMB_TRIANGLE:
+                float triH = length * scale;
+                float triW = effThickness;
+                renderer.triangle(x2, y2, x1 - sinAngle * triW * 0.5f, y1 + cosAngle * triW * 0.5f, x1 + sinAngle * triW * 0.5f, y1 - cosAngle * triW * 0.5f, c1, c2);
+                break;
+            case LIMB_FILLED_CIRCLE:
+                renderer.circle(x2, y2, length * scale, 24, c1, c2);
+                break;
+            case LIMB_ELLIPSE:
+                renderer.ellipse(x2, y2, length * scale, effThickness * 0.5f, 24, worldAngle, c1, c2);
+                break;
+            case LIMB_TRAPEZOID:
+                renderer.myTrapezoid(x1, y1, x2, y2, trapezoidThickness1 * scale, trapezoidThickness2 * scale, cosAngle, sinAngle, useGradient, c1, c2);
+                break;
+            case LIMB_POLYGON:
+                renderer.polygon(x2, y2, length * scale, Math.max(3, numPolygonVertices), worldAngle, c1, c2);
+                break;
+            default:
+                renderer.myRoundedSegment(x1, y1, x2, y2, effThickness, cosAngle, sinAngle, useGradient, c1, c2);
+                break;
+        }
+    }
+
+    public void drawLimbCulled(SNShapeRenderer renderer, float x, float y, float scale) {
+        drawLimb(renderer, x, y, scale, false);
+    }
+
+    public void drawLimbAA(SNShapeRenderer renderer, float x, float y, float scale) {
+        int passes = Math.max(2, (int) Math.floor((Math.max(thickness, length) / 80.0f) * 6.0f));
+        Color aaColor = new Color(getDisplayColor()).mul(0.20f);
+
+        for (int i = 0; i < passes; i++) {
+            float passScale = scale + (i * 0.14f);
+            drawLimb(renderer, x, y, passScale, false);
+        }
+        drawLimb(renderer, x, y, scale, false);
+    }
+
+    public void drawPolyfill(SNShapeRenderer renderer, float x, float y, float scale) {}
+    public void drawPolyfillAA(SNShapeRenderer renderer, float x, float y, float scale) {}
 
     public void readData(int version, int build, DataInputStream in) throws IOException {
         this.limbType = in.readByte();
@@ -155,7 +259,7 @@ public class StickNode {
             float b = ((c >> 16) & 0xFF) / 255.0f;
             this.color.set(r, g, b, 1.0f);
         } else {
-            this.color.set(stickfigure.getColor());
+            this.color.set(stickfigure != null ? stickfigure.getColor() : Color.BLACK);
         }
 
         if (useGradient) {
@@ -170,13 +274,14 @@ public class StickNode {
             this.numPolygonVertices = in.readShort();
         }
 
-        // Read children count and construct child nodes
         int childCount = in.readInt();
         for (int i = 0; i < childCount; i++) {
             StickNode child = new StickNode(stickfigure, this);
             child.readData(version, build, in);
         }
     }
+
+    public void writeData(DataOutputStream out) throws IOException {}
 
     public void updateTransforms(float parentX, float parentY, float parentAngle) {
         if (isMainNode()) {

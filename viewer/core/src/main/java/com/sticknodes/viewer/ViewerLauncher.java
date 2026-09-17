@@ -177,13 +177,13 @@ public class ViewerLauncher extends ApplicationAdapter {
 
         if (selectedNode != null) {
             shapeRenderer.begin(camera.combined, GL20.GL_TRIANGLES);
-            shapeRenderer.drawCircle(selectedNode.worldX, selectedNode.worldY, 8.0f * cameraZoom, com.badlogic.gdx.graphics.Color.YELLOW);
+            shapeRenderer.circle(selectedNode.worldX, selectedNode.worldY, 8.0f * cameraZoom, 16, com.badlogic.gdx.graphics.Color.YELLOW, com.badlogic.gdx.graphics.Color.YELLOW);
             shapeRenderer.end();
         }
     }
 
     private void renderNodeRecursive(StickNode node) {
-        shapeRenderer.drawNodeSegment(node);
+        node.drawLimb(shapeRenderer, 0, 0, 1.0f, false);
         for (StickNode child : node.getChildrenNodes()) {
             renderNodeRecursive(child);
         }

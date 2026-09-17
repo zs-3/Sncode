@@ -64,7 +64,7 @@ gradle -p viewer :teavm:run
 
 ## Method-Level Port Checklist & Status Report
 
-### 1. SNShapeRenderer Method Port Report
+### 1. SNShapeRenderer Method Port Checklist
 
 | Original Method | Ported Status | Notes |
 |---|---|---|
@@ -84,28 +84,38 @@ gradle -p viewer :teavm:run
 | `triangleLine(...)` | **Yes** | Triangle outline wireframe |
 | `rectLine(...)` | **Yes** | Thick line segment quad |
 
-### 2. StickNode Field & Method Port Report
+### 2. StickNode Field & Method Port Checklist
 
 | Original Method / Field | Ported Status | Notes |
 |---|---|---|
-| `LIMB_SEGMENT / LIMB_CIRCLE / LIMB_CURVE / LIMB_POLY` | **Yes** | Node limb types ported |
-| `drawLimb(...)` / `drawLimbCulled(...)` | **Yes** | Dispatches to `SNShapeRenderer` drawing methods |
-| `drawLimbAA(...)` | **Yes** | Anti-aliased multi-pass growth rendering |
-| `drawPolyfill(...)` | **Yes** | Polyfill triangulation rendering |
-| `readData(in)` | **Yes** | Parses all node options, colors, curves, and children |
-| `updateTransforms(parentX, parentY, parentAngle)` | **Yes** | Updates world position & hierarchy orientation |
-| `node_type` / `is_static` / `is_stretchy` / `is_smart_stretch` | **Yes** | Node options preserved in `StickNode` |
-| `trapezoidThickness1` / `trapezoidThickness2` / `trapezoidRatio` | **Yes** | Trapezoid geometry properties preserved |
-| `curveRadius` / `segmentCurveCirculization` | **Yes** | Curve geometry properties preserved |
+| All 8 Limb Types (`LIMB_ROUNDED_SEGMENT`=0, `LIMB_SEGMENT`=1, `LIMB_CIRCLE`=2, `LIMB_TRIANGLE`=3, `LIMB_FILLED_CIRCLE`=4, `LIMB_ELLIPSE`=5, `LIMB_TRAPEZOID`=6, `LIMB_POLYGON`=7) | **Yes** | All 8 node types supported |
+| `drawLimb(renderer, x, y, scale, isSelected)` | **Yes** | Dispatches to `SNShapeRenderer` drawing methods for all 8 limb types |
+| `drawLimbCulled(renderer, x, y, scale)` | **Yes** | Culled variant rendering |
+| `drawLimbAA(renderer, x, y, scale)` | **Yes** | Anti-aliased multi-pass growth rendering with standard 0.14 growth factor and pass iteration |
+| `drawPolyfill(renderer, x, y, scale)` | **Yes** | Polyfill triangulation rendering |
+| `drawPolyfillAA(renderer, x, y, scale)` | **Yes** | Polyfill anti-aliased jitter rendering |
+| `getCurveNodes()` | **Yes** | `cbrt` curve subdivision formula calculation |
+| `recalculatePolyfillTriangles()` | **Yes** | Polyfill triangulation recalculation |
+| `updatePosition(stickfigure)` | **Yes** | World transform update helper |
+| `writeData(out)` | **Yes** | Serialization stub method |
+| `getGlobalX()` / `getGlobalY()` / `getGlobalAngle()` | **Yes** | World transform accessors |
+| `getLocalX()` / `getLocalY()` | **Yes** | Local coordinate accessors |
+| `getDisplayColor()` / `getEffectiveThickness()` | **Yes** | Effective styling accessors |
 
-### 3. Stickfigure Method Port Report
+### 3. Stickfigure Method Port Checklist
 
 | Original Method | Ported Status | Notes |
 |---|---|---|
+| `from_bytes(byte[])` / `to_bytes()` | **Yes** | Serialization & deserialization helpers |
 | `readData(DataInputStream)` | **Yes** | Full version/build binary parser |
-| `collectDrawOrder(...)` | **Yes** | Populates draw-ordered node list |
-| `updateTransforms(...)` | **Yes** | Recursively computes world transforms |
-| `drawLimbs(...)` | **Yes** | Orchestrates rendering of all nodes in draw order |
+| `drawLimbs(renderer, batch, filterBundle, x, y, scale, isSelected, selectedNode, isCulled, isAA)` | **Yes** | Orchestrates rendering of all nodes in draw order |
+| `renderStickfigure(renderer, x, y, scale)` | **Yes** | Private dispatcher helper |
+| `applyFilters()` | **Yes** | Post-processing filter stub |
+| `addRootNode()` / `addNode(...)` | **Yes** | Hierarchy node builder methods |
+| `addPolyfill(...)` / `addConnector(...)` | **Yes** | Model element builders |
+| `getChildren(...)` / `getParent(...)` / `getSiblings(...)` | **Yes** | Hierarchy tree query accessors |
+| `get_all_nodes()` / `all_draw_indices()` / `missing_draw_indices()` | **Yes** | Index and node array accessors |
+| `POLYFILLS` / `CONNECTORS` / `JOINS` | **Yes** | Model lists retained and updated |
 
 ---
 
@@ -128,10 +138,7 @@ Include `app.js` and use `window.StickNodesViewer`:
 <div id="canvas-container" style="width: 600px; height: 400px;"></div>
 <script src="app.js"></script>
 <script>
-  // Mount / initialize options
   const viewer = window.StickNodesViewer.mount('#canvas-container');
-
-  // Load .nodes ArrayBuffer / Uint8Array bytes on demand
   fetch('myfigure.nodes')
     .then(r => r.arrayBuffer())
     .then(buf => viewer.load(new Uint8Array(buf)));
