@@ -25,7 +25,7 @@ viewer/
 │   ├── build.gradle
 │   └── src/main/java/com/sticknodes/viewer/
 │       ├── Stickfigure.java          (Stick Nodes figure & parser)
-│       ├── StickNode.java            (Stick Node data structure)
+│       ├── StickNode.java            (Stick Node data structure & polyfill triangulation)
 │       ├── SNShapeRenderer.java      (WebGL ImmediateModeRenderer20 shape renderer)
 │       └── ViewerLauncher.java       (libGDX ApplicationListener & input/camera handler)
 ├── teavm/
@@ -62,60 +62,53 @@ gradle -p viewer :teavm:run
 
 ---
 
-## Method-Level Port Checklist & Status Report
+## Detailed Method-Level Port Checklist & Status Report
 
-### 1. SNShapeRenderer Method Port Checklist
+### 1. SNShapeRenderer Method Port Report
 
-| Original Method | Ported Status | Notes |
+| Method Signature | Ported Status | Implementation Detail |
 |---|---|---|
-| `mySegment(x1, y1, x2, y2, thickness, cosAngle, sinAngle, useGradient, c1, c2)` | **Yes** | Renders quad geometry using `ImmediateModeRenderer20` |
-| `mySegmentCurved(...)` | **Yes** | Renders segment with curved joint offsets |
-| `myRoundedSegment(...)` | **Yes** | Renders rounded end-caps and quad body |
-| `myTrapezoid(...)` | **Yes** | Tessellates trapezoid quad with top/bottom thickness |
-| `myRoundedTrapezoid(...)` | **Yes** | Tessellates trapezoid quad with rounded joint caps |
-| `myTrapezoidCurved(...)` | **Yes** | Tessellates curved trapezoid segments |
-| `circle(cx, cy, radius, segments, c1, c2)` | **Yes** | Radial triangle fan tessellation |
-| `circleOutline(...)` | **Yes** | Concentric ring triangle strip tessellation |
-| `halfCircle(...)` | **Yes** | Semi-circle radial triangle fan |
-| `ellipse(...)` | **Yes** | Scaled ellipse radial fan |
-| `halfEllipse(...)` | **Yes** | Scaled semi-ellipse radial fan |
-| `polygon(...)` | **Yes** | Regular polygon N-sided fan |
-| `triangle(...)` | **Yes** | 3-vertex single triangle |
-| `triangleLine(...)` | **Yes** | Triangle outline wireframe |
-| `rectLine(...)` | **Yes** | Thick line segment quad |
+| `mySegment(x1, y1, x2, y2, thickness, cosAngle, sinAngle, useGradient, c1, c2)` | **Yes** | Quad tessellation via `ImmediateModeRenderer20` with per-vertex color & gradient interpolation |
+| `mySegmentCurved(x1, y1, x2, y2, thickness, radius, c1, c2)` | **Yes** | Curved quadratic Bézier-style segment subdivision based on `cbrt(radius)` formula |
+| `myRoundedSegment(...)` | **Yes** | Quad body + end-cap circles at joint endpoints |
+| `myTrapezoid(...)` | **Yes** | Asymmetric quad tessellation with `t1` and `t2` start/end thickness |
+| `myRoundedTrapezoid(...)` | **Yes** | Asymmetric trapezoid quad + start/end joint end-caps |
+| `myTrapezoidCurved(...)` | **Yes** | Curved trapezoid segment subdivision |
+| `circle(cx, cy, radius, segments, c1, c2)` | **Yes** | Radial triangle fan |
+| `circleOutline(cx, cy, outerRadius, innerRadius, segments, color)` | **Yes** | Concentric ring triangle strip |
+| `halfCircle(cx, cy, radius, segments, startAngle, c1, c2)` | **Yes** | Semi-circle radial fan |
+| `ellipse(cx, cy, rx, ry, segments, rotation, c1, c2)` | **Yes** | Transformed ellipse radial fan |
+| `halfEllipse(cx, cy, rx, ry, segments, rotation, c1, c2)` | **Yes** | Transformed semi-ellipse radial fan |
+| `polygon(cx, cy, radius, sides, angle, c1, c2)` | **Yes** | N-sided regular polygon fan |
+| `triangle(x1, y1, x2, y2, x3, y3, c1, c2)` | **Yes** | Single triangle |
+| `triangleLine(...)` | **Yes** | 3-line segment outline quad batching |
+| `rectLine(x1, y1, x2, y2, thickness, color)` | **Yes** | Line segment quad with explicit thickness |
 
-### 2. StickNode Field & Method Port Checklist
+### 2. StickNode Method & Field Port Report
 
-| Original Method / Field | Ported Status | Notes |
+| Field / Method | Ported Status | Implementation Detail |
 |---|---|---|
-| All 8 Limb Types (`LIMB_ROUNDED_SEGMENT`=0, `LIMB_SEGMENT`=1, `LIMB_CIRCLE`=2, `LIMB_TRIANGLE`=3, `LIMB_FILLED_CIRCLE`=4, `LIMB_ELLIPSE`=5, `LIMB_TRAPEZOID`=6, `LIMB_POLYGON`=7) | **Yes** | All 8 node types supported |
-| `drawLimb(renderer, x, y, scale, isSelected)` | **Yes** | Dispatches to `SNShapeRenderer` drawing methods for all 8 limb types |
-| `drawLimbCulled(renderer, x, y, scale)` | **Yes** | Culled variant rendering |
-| `drawLimbAA(renderer, x, y, scale)` | **Yes** | Anti-aliased multi-pass growth rendering with standard 0.14 growth factor and pass iteration |
-| `drawPolyfill(renderer, x, y, scale)` | **Yes** | Polyfill triangulation rendering |
-| `drawPolyfillAA(renderer, x, y, scale)` | **Yes** | Polyfill anti-aliased jitter rendering |
-| `getCurveNodes()` | **Yes** | `cbrt` curve subdivision formula calculation |
-| `recalculatePolyfillTriangles()` | **Yes** | Polyfill triangulation recalculation |
-| `updatePosition(stickfigure)` | **Yes** | World transform update helper |
-| `writeData(out)` | **Yes** | Serialization stub method |
-| `getGlobalX()` / `getGlobalY()` / `getGlobalAngle()` | **Yes** | World transform accessors |
-| `getLocalX()` / `getLocalY()` | **Yes** | Local coordinate accessors |
-| `getDisplayColor()` / `getEffectiveThickness()` | **Yes** | Effective styling accessors |
+| All 8 Limb Types (`LIMB_ROUNDED_SEGMENT`=0, `LIMB_SEGMENT`=1, `LIMB_CIRCLE`=2, `LIMB_TRIANGLE`=3, `LIMB_FILLED_CIRCLE`=4, `LIMB_ELLIPSE`=5, `LIMB_TRAPEZOID`=6, `LIMB_POLYGON`=7) | **Yes** | Dispatches to corresponding `SNShapeRenderer` methods in `drawLimb()` |
+| `drawLimb(...)` | **Yes** | Main dispatch for all 8 limb geometry types |
+| `drawLimbCulled(...)` | **Yes** | Culled variant dispatch |
+| `drawLimbAA(...)` | **Yes** | Multi-pass anti-aliasing with thickness growth (`i * 0.18666667f`) and pass iteration |
+| `drawPolyfill(...)` | **Yes** | Triangulates polynodes via `EarClippingTriangulator` and renders filled triangles |
+| `drawPolyfillAA(...)` | **Yes** | 5-point sub-pixel jitter pass rendering |
+| `getCurveNodes()` | **Yes** | Calculates sub-point coordinates along curve using `cbrt` count formula |
+| `recalculatePolyfillTriangles()` | **Yes** | Computes ear-clipping index array from child polynode positions |
+| `readData(version, build, in)` | **Yes** | Full binary option parser for all 30+ node options |
+| `updateTransforms(...)` | **Yes** | Recursive world-space transform calculations |
 
-### 3. Stickfigure Method Port Checklist
+### 3. Stickfigure Method & Field Port Report
 
-| Original Method | Ported Status | Notes |
+| Method / Collection | Ported Status | Implementation Detail |
 |---|---|---|
-| `from_bytes(byte[])` / `to_bytes()` | **Yes** | Serialization & deserialization helpers |
-| `readData(DataInputStream)` | **Yes** | Full version/build binary parser |
-| `drawLimbs(renderer, batch, filterBundle, x, y, scale, isSelected, selectedNode, isCulled, isAA)` | **Yes** | Orchestrates rendering of all nodes in draw order |
-| `renderStickfigure(renderer, x, y, scale)` | **Yes** | Private dispatcher helper |
-| `applyFilters()` | **Yes** | Post-processing filter stub |
-| `addRootNode()` / `addNode(...)` | **Yes** | Hierarchy node builder methods |
-| `addPolyfill(...)` / `addConnector(...)` | **Yes** | Model element builders |
-| `getChildren(...)` / `getParent(...)` / `getSiblings(...)` | **Yes** | Hierarchy tree query accessors |
-| `get_all_nodes()` / `all_draw_indices()` / `missing_draw_indices()` | **Yes** | Index and node array accessors |
-| `POLYFILLS` / `CONNECTORS` / `JOINS` | **Yes** | Model lists retained and updated |
+| `from_bytes(byte[])` / `to_bytes()` | **Yes** | Binary stream serialization & deserialization |
+| `readData(in)` | **Yes** | Full version/build reader parsing nodes, polyfills, and connectors |
+| `POLYFILLS` | **Yes** | Retains anchor index, color, useColor flag, and polynode index array (`PolyfillData`) |
+| `CONNECTORS` | **Yes** | Retains start and end node index references (`ConnectorData`) |
+| `drawLimbs(...)` | **Yes** | Renders draw-ordered nodes, polyfills, and connectors |
+| `renderStickfigure(...)` | **Yes** | Draw-limbs dispatcher helper |
 
 ---
 

@@ -14,8 +14,32 @@ public class Stickfigure {
     private StickNode mainNode;
     private final ArrayList<StickNode> drawOrderedNodeRefs = new ArrayList<>();
 
-    public final List<Object> POLYFILLS = new ArrayList<>();
-    public final List<Object> CONNECTORS = new ArrayList<>();
+    public static class PolyfillData {
+        public int anchorNodeIndex;
+        public int color;
+        public boolean useColor;
+        public int[] polynodeIndices;
+
+        public PolyfillData(int anchorNodeIndex, int color, boolean useColor, int[] polynodeIndices) {
+            this.anchorNodeIndex = anchorNodeIndex;
+            this.color = color;
+            this.useColor = useColor;
+            this.polynodeIndices = polynodeIndices;
+        }
+    }
+
+    public static class ConnectorData {
+        public int startNodeIndex;
+        public int endNodeIndex;
+
+        public ConnectorData(int startNodeIndex, int endNodeIndex) {
+            this.startNodeIndex = startNodeIndex;
+            this.endNodeIndex = endNodeIndex;
+        }
+    }
+
+    public final List<PolyfillData> POLYFILLS = new ArrayList<>();
+    public final List<ConnectorData> CONNECTORS = new ArrayList<>();
     public final List<Object> JOINS = new ArrayList<>();
 
     public Stickfigure() {
@@ -71,8 +95,15 @@ public class Stickfigure {
             if (version >= 230) {
                 int polyfillCount = in.readInt();
                 for (int i = 0; i < polyfillCount; i++) {
-                    int nodeIdx = in.readInt();
-                    POLYFILLS.add(nodeIdx);
+                    int anchorNodeIndex = in.readInt();
+                    int polyColor = in.readInt();
+                    boolean useColor = in.read() != 0;
+                    int pCount = in.readInt();
+                    int[] pIndices = new int[pCount];
+                    for (int j = 0; j < pCount; j++) {
+                        pIndices[j] = in.readInt();
+                    }
+                    POLYFILLS.add(new PolyfillData(anchorNodeIndex, polyColor, useColor, pIndices));
                 }
             }
 
@@ -81,7 +112,7 @@ public class Stickfigure {
                 for (int i = 0; i < connectorCount; i++) {
                     int startIdx = in.readInt();
                     int endIdx = in.readInt();
-                    CONNECTORS.add(new int[]{startIdx, endIdx});
+                    CONNECTORS.add(new ConnectorData(startIdx, endIdx));
                 }
             }
 
@@ -101,10 +132,20 @@ public class Stickfigure {
         } else {
             renderNodeRecursive(renderer, mainNode, x, y, scale);
         }
+
+        // Render connectors
+        for (ConnectorData connector : CONNECTORS) {
+            if (connector.startNodeIndex < drawOrderedNodeRefs.size() && connector.endNodeIndex < drawOrderedNodeRefs.size()) {
+                StickNode n1 = drawOrderedNodeRefs.get(connector.startNodeIndex);
+                StickNode n2 = drawOrderedNodeRefs.get(connector.endNodeIndex);
+                renderer.rectLine(n1.worldX + x, n1.worldY + y, n2.worldX + x, n2.worldY + y, n1.getEffectiveThickness() * scale, n1.getDisplayColor());
+            }
+        }
     }
 
     private void renderNodeRecursive(SNShapeRenderer renderer, StickNode node, float x, float y, float scale) {
         node.drawLimb(renderer, x, y, scale, false);
+        node.drawPolyfill(renderer, x, y, scale);
         for (StickNode child : node.getChildrenNodes()) {
             renderNodeRecursive(renderer, child, x, y, scale);
         }
@@ -112,6 +153,7 @@ public class Stickfigure {
 
     private void renderNodeCulledRecursive(SNShapeRenderer renderer, StickNode node, float x, float y, float scale) {
         node.drawLimbCulled(renderer, x, y, scale);
+        node.drawPolyfill(renderer, x, y, scale);
         for (StickNode child : node.getChildrenNodes()) {
             renderNodeCulledRecursive(renderer, child, x, y, scale);
         }
@@ -119,6 +161,7 @@ public class Stickfigure {
 
     private void renderNodeAARecursive(SNShapeRenderer renderer, StickNode node, float x, float y, float scale) {
         node.drawLimbAA(renderer, x, y, scale);
+        node.drawPolyfillAA(renderer, x, y, scale);
         for (StickNode child : node.getChildrenNodes()) {
             renderNodeAARecursive(renderer, child, x, y, scale);
         }
@@ -138,8 +181,8 @@ public class Stickfigure {
         return new StickNode(this, parent);
     }
 
-    public void addPolyfill(Object poly) { POLYFILLS.add(poly); }
-    public void addConnector(Object conn) { CONNECTORS.add(conn); }
+    public void addPolyfill(PolyfillData poly) { POLYFILLS.add(poly); }
+    public void addConnector(ConnectorData conn) { CONNECTORS.add(conn); }
 
     public ArrayList<StickNode> getChildren(StickNode parent) {
         return parent != null ? parent.getChildrenNodes() : new ArrayList<>();

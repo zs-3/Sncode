@@ -1,13 +1,14 @@
 package com.sticknodes.viewer;
 
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.math.EarClippingTriangulator;
+import com.badlogic.gdx.utils.ShortArray;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 
 public class StickNode {
-    // 8 Original Limb Types
     public static final int LIMB_ROUNDED_SEGMENT = 0;
     public static final int LIMB_SEGMENT = 1;
     public static final int LIMB_CIRCLE = 2;
@@ -21,7 +22,6 @@ public class StickNode {
     private StickNode parentNode;
     private final ArrayList<StickNode> childrenNodes = new ArrayList<>();
 
-    // Full Node Option Fields
     public int limbType = LIMB_ROUNDED_SEGMENT;
     public int drawOrderIndex;
     public boolean isStatic;
@@ -67,10 +67,12 @@ public class StickNode {
     public final Color secondaryColor = new Color(Color.BLACK);
     public final Color circleOutlineColor = new Color(Color.BLACK);
 
-    // World Transforms
     public float worldX;
     public float worldY;
     public float worldAngle;
+
+    private final EarClippingTriangulator triangulator = new EarClippingTriangulator();
+    private short[] triangulatedIndices;
 
     public StickNode(Stickfigure stickfigure, StickNode parentNode) {
         this.stickfigure = stickfigure;
@@ -105,16 +107,40 @@ public class StickNode {
     public Color getColor() { return color; }
     public Color getSecondaryColor() { return secondaryColor; }
 
-    public ArrayList<StickNode> getCurveNodes() {
-        ArrayList<StickNode> list = new ArrayList<>();
+    public ArrayList<float[]> getCurveNodes() {
+        ArrayList<float[]> points = new ArrayList<>();
         int count = Math.max(1, (int) (Math.cbrt(Math.max(length * 0.5f, Math.abs(curveRadius) * 0.5f)) * 16 * 0.5f));
+        StickNode parent = getParentNode();
+        float startX = parent != null ? parent.worldX : worldX;
+        float startY = parent != null ? parent.worldY : worldY;
+        float endX = worldX;
+        float endY = worldY;
+
+        float dx = endX - startX;
+        float dy = endY - startY;
+        float len = (float) Math.hypot(dx, dy);
+        float perpX = len == 0 ? 0 : -dy / len * curveRadius;
+        float perpY = len == 0 ? 0 : dx / len * curveRadius;
+
         for (int i = 0; i <= count; i++) {
-            list.add(this);
+            float t = (float) i / count;
+            float px = startX + dx * t + perpX * (float) Math.sin(t * Math.PI);
+            float py = startY + dy * t + perpY * (float) Math.sin(t * Math.PI);
+            points.add(new float[]{px, py});
         }
-        return list;
+        return points;
     }
 
-    public void recalculatePolyfillTriangles() {}
+    public void recalculatePolyfillTriangles() {
+        if (childrenNodes.size() < 2) return;
+        float[] verts = new float[childrenNodes.size() * 2];
+        for (int i = 0; i < childrenNodes.size(); i++) {
+            verts[i * 2] = childrenNodes.get(i).worldX;
+            verts[i * 2 + 1] = childrenNodes.get(i).worldY;
+        }
+        ShortArray indices = triangulator.computeTriangles(verts);
+        triangulatedIndices = indices.toArray();
+    }
 
     public void updatePosition(Stickfigure fig) {
         if (fig != null) {
@@ -145,16 +171,23 @@ public class StickNode {
 
         switch (limbType) {
             case LIMB_ROUNDED_SEGMENT:
-                renderer.myRoundedSegment(x1, y1, x2, y2, effThickness, cosAngle, sinAngle, useGradient, c1, c2);
+                if (curveRadius != 0) {
+                    renderer.mySegmentCurved(x1, y1, x2, y2, effThickness, curveRadius * scale, c1, c2);
+                } else {
+                    renderer.myRoundedSegment(x1, y1, x2, y2, effThickness, cosAngle, sinAngle, useGradient, c1, c2);
+                }
                 break;
             case LIMB_SEGMENT:
-                renderer.mySegment(x1, y1, x2, y2, effThickness, cosAngle, sinAngle, useGradient, c1, c2);
+                if (curveRadius != 0) {
+                    renderer.mySegmentCurved(x1, y1, x2, y2, effThickness, curveRadius * scale, c1, c2);
+                } else {
+                    renderer.mySegment(x1, y1, x2, y2, effThickness, cosAngle, sinAngle, useGradient, c1, c2);
+                }
                 break;
             case LIMB_CIRCLE:
-                renderer.circleOutline(x2, y2, length * scale, (length - effThickness) * scale, 24, c1);
+                renderer.circleOutline(x2, y2, length * scale, Math.max(0, (length - effThickness)) * scale, 24, c1);
                 break;
             case LIMB_TRIANGLE:
-                float triH = length * scale;
                 float triW = effThickness;
                 renderer.triangle(x2, y2, x1 - sinAngle * triW * 0.5f, y1 + cosAngle * triW * 0.5f, x1 + sinAngle * triW * 0.5f, y1 - cosAngle * triW * 0.5f, c1, c2);
                 break;
@@ -165,7 +198,11 @@ public class StickNode {
                 renderer.ellipse(x2, y2, length * scale, effThickness * 0.5f, 24, worldAngle, c1, c2);
                 break;
             case LIMB_TRAPEZOID:
-                renderer.myTrapezoid(x1, y1, x2, y2, trapezoidThickness1 * scale, trapezoidThickness2 * scale, cosAngle, sinAngle, useGradient, c1, c2);
+                if (curveRadius != 0) {
+                    renderer.myTrapezoidCurved(x1, y1, x2, y2, trapezoidThickness1 * scale, trapezoidThickness2 * scale, curveRadius * scale, c1, c2);
+                } else {
+                    renderer.myTrapezoid(x1, y1, x2, y2, trapezoidThickness1 * scale, trapezoidThickness2 * scale, cosAngle, sinAngle, useGradient, c1, c2);
+                }
                 break;
             case LIMB_POLYGON:
                 renderer.polygon(x2, y2, length * scale, Math.max(3, numPolygonVertices), worldAngle, c1, c2);
@@ -182,17 +219,35 @@ public class StickNode {
 
     public void drawLimbAA(SNShapeRenderer renderer, float x, float y, float scale) {
         int passes = Math.max(2, (int) Math.floor((Math.max(thickness, length) / 80.0f) * 6.0f));
-        Color aaColor = new Color(getDisplayColor()).mul(0.20f);
+        int origThickness = thickness;
 
         for (int i = 0; i < passes; i++) {
-            float passScale = scale + (i * 0.14f);
-            drawLimb(renderer, x, y, passScale, false);
+            thickness = (int) (origThickness + i * 0.18666667f);
+            drawLimb(renderer, x, y, scale, false);
         }
+        thickness = origThickness;
         drawLimb(renderer, x, y, scale, false);
     }
 
-    public void drawPolyfill(SNShapeRenderer renderer, float x, float y, float scale) {}
-    public void drawPolyfillAA(SNShapeRenderer renderer, float x, float y, float scale) {}
+    public void drawPolyfill(SNShapeRenderer renderer, float x, float y, float scale) {
+        if (triangulatedIndices == null) recalculatePolyfillTriangles();
+        if (triangulatedIndices == null || childrenNodes.size() < 3) return;
+
+        for (int i = 0; i < triangulatedIndices.length; i += 3) {
+            StickNode n1 = childrenNodes.get(triangulatedIndices[i]);
+            StickNode n2 = childrenNodes.get(triangulatedIndices[i + 1]);
+            StickNode n3 = childrenNodes.get(triangulatedIndices[i + 2]);
+            renderer.triangle(n1.worldX + x, n1.worldY + y, n2.worldX + x, n2.worldY + y, n3.worldX + x, n3.worldY + y, getDisplayColor(), getDisplayColor());
+        }
+    }
+
+    public void drawPolyfillAA(SNShapeRenderer renderer, float x, float y, float scale) {
+        float[] offsetsX = {-0.5f, 0.5f, 0.0f, -0.5f, 0.5f};
+        float[] offsetsY = {-0.5f, -0.5f, 0.0f, 0.5f, 0.5f};
+        for (int i = 0; i < 5; i++) {
+            drawPolyfill(renderer, x + offsetsX[i], y + offsetsY[i], scale);
+        }
+    }
 
     public void readData(int version, int build, DataInputStream in) throws IOException {
         this.limbType = in.readByte();
