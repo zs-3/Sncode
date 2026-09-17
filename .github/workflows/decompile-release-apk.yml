@@ -1,0 +1,156 @@
+name: Decompile StickNodes APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  decompile:
+    runs-on: ubuntu-latest
+
+    env:
+      RELEASE_TAG: "1.0.0"
+      APK_NAME: "Stick.Nodes.Pro.4.2.5.apk"
+      JADX_VERSION: "1.5.3"
+
+    steps:
+      # --------------------------------------------------
+      # 1. Checkout repository
+      # --------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      # --------------------------------------------------
+      # 2. Setup Java
+      # --------------------------------------------------
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      # --------------------------------------------------
+      # 3. Download APK from GitHub Release
+      # --------------------------------------------------
+      - name: Download APK from Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+
+          echo "Getting release information..."
+
+          RELEASE_JSON=$(curl -fsSL \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/${RELEASE_TAG}")
+
+          ASSET_URL=$(echo "$RELEASE_JSON" | jq -r \
+            --arg NAME "$APK_NAME" \
+            '.assets[] | select(.name == $NAME) | .browser_download_url')
+
+          if [ -z "$ASSET_URL" ] || [ "$ASSET_URL" = "null" ]; then
+            echo "ERROR: Release asset not found:"
+            echo "$APK_NAME"
+            exit 1
+          fi
+
+          echo "Downloading:"
+          echo "$ASSET_URL"
+
+          curl -fL \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/octet-stream" \
+            "$ASSET_URL" \
+            -o sticknodes.apk
+
+          echo "APK downloaded."
+
+          ls -lh sticknodes.apk
+
+      # --------------------------------------------------
+      # 4. Download JADX
+      # --------------------------------------------------
+      - name: Download JADX
+        run: |
+          set -e
+
+          wget -q \
+            "https://github.com/skylot/jadx/releases/download/v${JADX_VERSION}/jadx-${JADX_VERSION}.zip" \
+            -O jadx.zip
+
+          unzip -q jadx.zip -d jadx
+
+          chmod +x jadx/bin/jadx
+
+          echo "JADX installed:"
+          ./jadx/bin/jadx --version
+
+      # --------------------------------------------------
+      # 5. Remove previous Java output
+      # --------------------------------------------------
+      - name: Clean previous decompilation
+        run: |
+          rm -rf sticknodes-java
+          mkdir -p sticknodes-java
+
+      # --------------------------------------------------
+      # 6. Decompile APK
+      # --------------------------------------------------
+      - name: Decompile APK with JADX
+        run: |
+          set -e
+
+          ./jadx/bin/jadx \
+            --output-dir sticknodes-java \
+            --show-bad-code \
+            --no-res \
+            sticknodes.apk
+
+      # --------------------------------------------------
+      # 7. Move Java sources to root of sticknodes-java
+      # --------------------------------------------------
+      - name: Organize Java source
+        run: |
+          set -e
+
+          if [ -d "sticknodes-java/sources" ]; then
+            cp -a sticknodes-java/sources/. sticknodes-java/
+            rm -rf sticknodes-java/sources
+          fi
+
+          echo "Java files generated:"
+          find sticknodes-java -type f -name "*.java" | wc -l
+
+      # --------------------------------------------------
+      # 8. Remove temporary APK
+      # --------------------------------------------------
+      - name: Remove temporary files
+        run: |
+          rm -f sticknodes.apk
+          rm -f jadx.zip
+          rm -rf jadx
+
+      # --------------------------------------------------
+      # 9. Commit Java source
+      # --------------------------------------------------
+      - name: Commit Java source
+        run: |
+          set -e
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add sticknodes-java
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
+          git commit -m "Decompile StickNodes APK to Java"
+          git push
