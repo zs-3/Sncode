@@ -16,33 +16,36 @@ jobs:
       JADX_VERSION: "1.5.3"
 
     steps:
-      # --------------------------------------------------
+
+      # ================================================
       # 1. Checkout repository
-      # --------------------------------------------------
+      # ================================================
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
-      # --------------------------------------------------
+      # ================================================
       # 2. Setup Java
-      # --------------------------------------------------
+      # ================================================
       - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
 
-      # --------------------------------------------------
+      # ================================================
       # 3. Download APK from GitHub Release
-      # --------------------------------------------------
+      # ================================================
       - name: Download APK from Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -e
 
-          echo "Getting release information..."
+          echo "========================================"
+          echo "Getting Release information"
+          echo "========================================"
 
           RELEASE_JSON=$(curl -fsSL \
             -H "Authorization: Bearer ${GH_TOKEN}" \
@@ -54,13 +57,16 @@ jobs:
             '.assets[] | select(.name == $NAME) | .browser_download_url')
 
           if [ -z "$ASSET_URL" ] || [ "$ASSET_URL" = "null" ]; then
-            echo "ERROR: Release asset not found:"
+            echo "ERROR: APK release asset was not found."
+            echo "Expected asset:"
             echo "$APK_NAME"
             exit 1
           fi
 
-          echo "Downloading:"
+          echo "Found APK:"
           echo "$ASSET_URL"
+
+          echo "Downloading APK..."
 
           curl -fL \
             -H "Authorization: Bearer ${GH_TOKEN}" \
@@ -68,16 +74,20 @@ jobs:
             "$ASSET_URL" \
             -o sticknodes.apk
 
-          echo "APK downloaded."
-
+          echo ""
+          echo "APK downloaded successfully:"
           ls -lh sticknodes.apk
 
-      # --------------------------------------------------
+      # ================================================
       # 4. Download JADX
-      # --------------------------------------------------
+      # ================================================
       - name: Download JADX
         run: |
           set -e
+
+          echo "========================================"
+          echo "Downloading JADX ${JADX_VERSION}"
+          echo "========================================"
 
           wget -q \
             "https://github.com/skylot/jadx/releases/download/v${JADX_VERSION}/jadx-${JADX_VERSION}.zip" \
@@ -87,33 +97,46 @@ jobs:
 
           chmod +x jadx/bin/jadx
 
-          echo "JADX installed:"
+          echo ""
+          echo "JADX version:"
           ./jadx/bin/jadx --version
 
-      # --------------------------------------------------
-      # 5. Remove previous Java output
-      # --------------------------------------------------
-      - name: Clean previous decompilation
+      # ================================================
+      # 5. Prepare output directory
+      # ================================================
+      - name: Prepare output directory
         run: |
           rm -rf sticknodes-java
           mkdir -p sticknodes-java
 
-      # --------------------------------------------------
+      # ================================================
       # 6. Decompile APK
-      # --------------------------------------------------
+      # ================================================
       - name: Decompile APK with JADX
         run: |
-          set -e
+          echo "========================================"
+          echo "Starting JADX decompilation"
+          echo "========================================"
 
           ./jadx/bin/jadx \
             --output-dir sticknodes-java \
             --show-bad-code \
             --no-res \
-            sticknodes.apk
+            --decompilation-mode fallback \
+            sticknodes.apk || true
 
-      # --------------------------------------------------
-      # 7. Move Java sources to root of sticknodes-java
-      # --------------------------------------------------
+          echo ""
+          echo "========================================"
+          echo "JADX finished"
+          echo "========================================"
+
+          JAVA_COUNT=$(find sticknodes-java -type f -name "*.java" | wc -l)
+
+          echo "Java files generated: $JAVA_COUNT"
+
+      # ================================================
+      # 7. Organize Java source
+      # ================================================
       - name: Organize Java source
         run: |
           set -e
@@ -123,21 +146,24 @@ jobs:
             rm -rf sticknodes-java/sources
           fi
 
-          echo "Java files generated:"
+          echo "========================================"
+          echo "Final Java source count"
+          echo "========================================"
+
           find sticknodes-java -type f -name "*.java" | wc -l
 
-      # --------------------------------------------------
-      # 8. Remove temporary APK
-      # --------------------------------------------------
+      # ================================================
+      # 8. Remove temporary files
+      # ================================================
       - name: Remove temporary files
         run: |
           rm -f sticknodes.apk
           rm -f jadx.zip
           rm -rf jadx
 
-      # --------------------------------------------------
-      # 9. Commit Java source
-      # --------------------------------------------------
+      # ================================================
+      # 9. Commit generated Java source
+      # ================================================
       - name: Commit Java source
         run: |
           set -e
@@ -153,4 +179,10 @@ jobs:
           fi
 
           git commit -m "Decompile StickNodes APK to Java"
+
           git push
+
+          echo ""
+          echo "========================================"
+          echo "Java source committed successfully!"
+          echo "========================================"
