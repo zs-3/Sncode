@@ -1,0 +1,11 @@
+package com.google.android.gms.common.internal;
+
+/* compiled from: com.google.android.gms:play-services-base@@18.4.0 */
+@com.google.android.gms.common.annotation.KeepForSdk
+@com.google.errorprone.annotations.RestrictedInheritance(allowedOnPath = ".*java.*/com/google/android/gms.*", explanation = "Use canonical fakes instead.", link = "go/gmscore-restrictedinheritance")
+/* loaded from: classes.dex */
+public interface TelemetryLoggingClient extends com.google.android.gms.common.api.HasApiKey<com.google.android.gms.common.internal.TelemetryLoggingOptions> {
+    @com.google.errorprone.annotations.ResultIgnorabilityUnspecified
+    @com.google.android.gms.common.annotation.KeepForSdk
+    com.google.android.gms.tasks.Task<java.lang.Void> log(com.google.android.gms.common.internal.TelemetryData r1);
+}

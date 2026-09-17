@@ -1,0 +1,81 @@
+package com.google.android.gms.internal.ads;
+
+/* compiled from: com.google.android.gms:play-services-ads@@23.4.0 */
+/* loaded from: classes.dex */
+public final class zzagj extends com.google.android.gms.internal.ads.zzagv {
+    public static final android.os.Parcelable.Creator<com.google.android.gms.internal.ads.zzagj> CREATOR = null;
+    public final byte[] zza;
+
+    static {
+            com.google.android.gms.internal.ads.zzagi r0 = new com.google.android.gms.internal.ads.zzagi
+            r0.<init>()
+            com.google.android.gms.internal.ads.zzagj.CREATOR = r0
+            return
+    }
+
+    zzagj(android.os.Parcel r3) {
+            r2 = this;
+            java.lang.String r0 = r3.readString()
+            int r1 = com.google.android.gms.internal.ads.zzeu.zza
+            r2.<init>(r0)
+            byte[] r3 = r3.createByteArray()
+            r2.zza = r3
+            return
+    }
+
+    public zzagj(java.lang.String r1, byte[] r2) {
+            r0 = this;
+            r0.<init>(r1)
+            r0.zza = r2
+            return
+    }
+
+    public final boolean equals(java.lang.Object r5) {
+            r4 = this;
+            r0 = 1
+            if (r4 != r5) goto L4
+            return r0
+        L4:
+            r1 = 0
+            if (r5 == 0) goto L27
+            java.lang.Class<com.google.android.gms.internal.ads.zzagj> r2 = com.google.android.gms.internal.ads.zzagj.class
+            java.lang.Class r3 = r5.getClass()
+            if (r2 == r3) goto L10
+            goto L27
+        L10:
+            com.google.android.gms.internal.ads.zzagj r5 = (com.google.android.gms.internal.ads.zzagj) r5
+            java.lang.String r2 = r4.zzf
+            java.lang.String r3 = r5.zzf
+            boolean r2 = r2.equals(r3)
+            if (r2 == 0) goto L27
+            byte[] r2 = r4.zza
+            byte[] r5 = r5.zza
+            boolean r5 = java.util.Arrays.equals(r2, r5)
+            if (r5 == 0) goto L27
+            return r0
+        L27:
+            return r1
+    }
+
+    public final int hashCode() {
+            r2 = this;
+            java.lang.String r0 = r2.zzf
+            int r0 = r0.hashCode()
+            int r0 = r0 + 527
+            byte[] r1 = r2.zza
+            int r0 = r0 * 31
+            int r1 = java.util.Arrays.hashCode(r1)
+            int r0 = r0 + r1
+            return r0
+    }
+
+    @Override // android.os.Parcelable
+    public final void writeToParcel(android.os.Parcel r1, int r2) {
+            r0 = this;
+            java.lang.String r2 = r0.zzf
+            r1.writeString(r2)
+            byte[] r2 = r0.zza
+            r1.writeByteArray(r2)
+            return
+    }
+}

@@ -1,0 +1,36 @@
+package com.google.android.gms.internal.ads;
+
+/* compiled from: com.google.android.gms:play-services-ads@@23.4.0 */
+/* loaded from: classes.dex */
+public final class zzgxd extends com.google.android.gms.internal.ads.zzhay implements com.google.android.gms.internal.ads.zzhcq {
+    private zzgxd() {
+            r1 = this;
+            r0 = 0
+            throw r0
+    }
+
+    /* synthetic */ zzgxd(com.google.android.gms.internal.ads.zzgxc r1) {
+            r0 = this;
+            com.google.android.gms.internal.ads.zzgxe r1 = com.google.android.gms.internal.ads.zzgxe.zzd()
+            r0.<init>(r1)
+            return
+    }
+
+    public final com.google.android.gms.internal.ads.zzgxd zza(com.google.android.gms.internal.ads.zzgwf r2) {
+            r1 = this;
+            r1.zzbu()
+            MessageType extends com.google.android.gms.internal.ads.zzhbe<MessageType, BuilderType> r0 = r1.zza
+            com.google.android.gms.internal.ads.zzgxe r0 = (com.google.android.gms.internal.ads.zzgxe) r0
+            com.google.android.gms.internal.ads.zzgxe.zzi(r0, r2)
+            return r1
+    }
+
+    public final com.google.android.gms.internal.ads.zzgxd zzb(java.lang.String r2) {
+            r1 = this;
+            r1.zzbu()
+            MessageType extends com.google.android.gms.internal.ads.zzhbe<MessageType, BuilderType> r0 = r1.zza
+            com.google.android.gms.internal.ads.zzgxe r0 = (com.google.android.gms.internal.ads.zzgxe) r0
+            com.google.android.gms.internal.ads.zzgxe.zzh(r0, r2)
+            return r1
+    }
+}

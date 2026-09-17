@@ -1,0 +1,33 @@
+package com.google.android.gms.internal.ads;
+
+/* compiled from: com.google.android.gms:play-services-ads@@23.4.0 */
+/* loaded from: classes.dex */
+final class zzagt {
+    private final int zza;
+    private final boolean zzb;
+    private final int zzc;
+
+    public zzagt(int r1, boolean r2, int r3) {
+            r0 = this;
+            r0.<init>()
+            r0.zza = r1
+            r0.zzb = r2
+            r0.zzc = r3
+            return
+    }
+
+    static /* bridge */ /* synthetic */ int zza(com.google.android.gms.internal.ads.zzagt r0) {
+            int r0 = r0.zzc
+            return r0
+    }
+
+    static /* bridge */ /* synthetic */ int zzb(com.google.android.gms.internal.ads.zzagt r0) {
+            int r0 = r0.zza
+            return r0
+    }
+
+    static /* bridge */ /* synthetic */ boolean zzc(com.google.android.gms.internal.ads.zzagt r0) {
+            boolean r0 = r0.zzb
+            return r0
+    }
+}

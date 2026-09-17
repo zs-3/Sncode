@@ -1,0 +1,45 @@
+package com.google.android.gms.internal.ads;
+
+/* compiled from: com.google.android.gms:play-services-ads@@23.4.0 */
+/* loaded from: classes.dex */
+final class zzehc extends com.google.android.gms.internal.ads.zzbqu {
+    private final com.google.android.gms.internal.ads.zzegn zza;
+
+    /* synthetic */ zzehc(com.google.android.gms.internal.ads.zzegn r1, com.google.android.gms.internal.ads.zzehb r2) {
+            r0 = this;
+            r0.<init>()
+            r0.zza = r1
+            return
+    }
+
+    @Override // com.google.android.gms.internal.ads.zzbqv
+    public final void zze(java.lang.String r3) throws android.os.RemoteException {
+            r2 = this;
+            com.google.android.gms.internal.ads.zzegn r0 = r2.zza
+            com.google.android.gms.internal.ads.zzczk r0 = r0.zzc
+            com.google.android.gms.internal.ads.zzeig r0 = (com.google.android.gms.internal.ads.zzeig) r0
+            r1 = 0
+            r0.zzi(r1, r3)
+            return
+    }
+
+    @Override // com.google.android.gms.internal.ads.zzbqv
+    public final void zzf(com.google.android.gms.ads.internal.client.zze r2) throws android.os.RemoteException {
+            r1 = this;
+            com.google.android.gms.internal.ads.zzegn r0 = r1.zza
+            com.google.android.gms.internal.ads.zzczk r0 = r0.zzc
+            com.google.android.gms.internal.ads.zzeig r0 = (com.google.android.gms.internal.ads.zzeig) r0
+            r0.zzh(r2)
+            return
+    }
+
+    @Override // com.google.android.gms.internal.ads.zzbqv
+    public final void zzg() throws android.os.RemoteException {
+            r1 = this;
+            com.google.android.gms.internal.ads.zzegn r0 = r1.zza
+            com.google.android.gms.internal.ads.zzczk r0 = r0.zzc
+            com.google.android.gms.internal.ads.zzeig r0 = (com.google.android.gms.internal.ads.zzeig) r0
+            r0.zzo()
+            return
+    }
+}

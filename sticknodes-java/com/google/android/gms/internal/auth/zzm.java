@@ -1,0 +1,7 @@
+package com.google.android.gms.internal.auth;
+
+/* compiled from: com.google.android.gms:play-services-auth-base@@18.0.10 */
+/* loaded from: classes.dex */
+public interface zzm extends android.os.IInterface {
+    void zzb(com.google.android.gms.common.api.Status r1, com.google.android.gms.auth.AccountChangeEventsResponse r2) throws android.os.RemoteException;
+}

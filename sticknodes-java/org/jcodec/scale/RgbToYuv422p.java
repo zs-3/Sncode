@@ -1,0 +1,18 @@
+package org.jcodec.scale;
+
+/* loaded from: classes2.dex */
+public class RgbToYuv422p {
+    private int downShift;
+    private int downShiftChr;
+    private int upShift;
+
+    public RgbToYuv422p(int r1, int r2) {
+            r0 = this;
+            r0.<init>()
+            r0.upShift = r1
+            r0.downShift = r2
+            int r2 = r2 + 1
+            r0.downShiftChr = r2
+            return
+    }
+}

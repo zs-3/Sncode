@@ -1,0 +1,36 @@
+package com.google.android.gms.internal.ads;
+
+/* compiled from: com.google.android.gms:play-services-ads@@23.4.0 */
+/* loaded from: classes.dex */
+public final class zzeun implements com.google.android.gms.internal.ads.zzexg {
+    private final java.lang.Boolean zza;
+
+    public zzeun(java.lang.Boolean r1) {
+            r0 = this;
+            r0.<init>()
+            r0.zza = r1
+            return
+    }
+
+    @Override // com.google.android.gms.internal.ads.zzexg
+    public final /* bridge */ /* synthetic */ void zzj(java.lang.Object r3) {
+            r2 = this;
+            java.lang.Boolean r0 = r2.zza
+            android.os.Bundle r3 = (android.os.Bundle) r3
+            java.lang.String r1 = "lft"
+            if (r0 != 0) goto Ld
+            r0 = -1
+            r3.putInt(r1, r0)
+            return
+        Ld:
+            boolean r0 = r0.booleanValue()
+            if (r0 == 0) goto L18
+            r0 = 1
+            r3.putInt(r1, r0)
+            return
+        L18:
+            r0 = 0
+            r3.putInt(r1, r0)
+            return
+    }
+}

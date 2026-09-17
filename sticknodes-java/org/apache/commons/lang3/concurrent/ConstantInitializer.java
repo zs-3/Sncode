@@ -1,0 +1,75 @@
+package org.apache.commons.lang3.concurrent;
+
+/* loaded from: classes2.dex */
+public class ConstantInitializer<T> implements org.apache.commons.lang3.concurrent.ConcurrentInitializer<T> {
+    private static final java.lang.String FMT_TO_STRING = "ConstantInitializer@%d [ object = %s ]";
+    private final T object;
+
+    public ConstantInitializer(T r1) {
+            r0 = this;
+            r0.<init>()
+            r0.object = r1
+            return
+    }
+
+    public boolean equals(java.lang.Object r2) {
+            r1 = this;
+            if (r1 != r2) goto L4
+            r2 = 1
+            return r2
+        L4:
+            boolean r0 = r2 instanceof org.apache.commons.lang3.concurrent.ConstantInitializer
+            if (r0 != 0) goto La
+            r2 = 0
+            return r2
+        La:
+            org.apache.commons.lang3.concurrent.ConstantInitializer r2 = (org.apache.commons.lang3.concurrent.ConstantInitializer) r2
+            java.lang.Object r0 = r1.getObject()
+            java.lang.Object r2 = r2.getObject()
+            boolean r2 = java.util.Objects.equals(r0, r2)
+            return r2
+    }
+
+    @Override // org.apache.commons.lang3.concurrent.ConcurrentInitializer
+    public T get() throws org.apache.commons.lang3.concurrent.ConcurrentException {
+            r1 = this;
+            java.lang.Object r0 = r1.getObject()
+            return r0
+    }
+
+    public final T getObject() {
+            r1 = this;
+            T r0 = r1.object
+            return r0
+    }
+
+    public int hashCode() {
+            r1 = this;
+            java.lang.Object r0 = r1.getObject()
+            if (r0 == 0) goto Lf
+            java.lang.Object r0 = r1.getObject()
+            int r0 = r0.hashCode()
+            goto L10
+        Lf:
+            r0 = 0
+        L10:
+            return r0
+    }
+
+    public java.lang.String toString() {
+            r3 = this;
+            r0 = 2
+            java.lang.Object[] r0 = new java.lang.Object[r0]
+            int r1 = java.lang.System.identityHashCode(r3)
+            java.lang.Integer r1 = java.lang.Integer.valueOf(r1)
+            r2 = 0
+            r0[r2] = r1
+            java.lang.Object r1 = r3.getObject()
+            java.lang.String r1 = java.lang.String.valueOf(r1)
+            r2 = 1
+            r0[r2] = r1
+            java.lang.String r1 = "ConstantInitializer@%d [ object = %s ]"
+            java.lang.String r0 = java.lang.String.format(r1, r0)
+            return r0
+    }
+}

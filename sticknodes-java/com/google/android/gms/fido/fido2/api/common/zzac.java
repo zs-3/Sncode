@@ -1,0 +1,42 @@
+package com.google.android.gms.fido.fido2.api.common;
+
+/* compiled from: com.google.android.gms:play-services-fido@@20.0.1 */
+/* loaded from: classes.dex */
+public final class zzac implements android.os.Parcelable.Creator {
+    public zzac() {
+            r0 = this;
+            r0.<init>()
+            return
+    }
+
+    @Override // android.os.Parcelable.Creator
+    public final /* bridge */ /* synthetic */ java.lang.Object createFromParcel(android.os.Parcel r7) {
+            r6 = this;
+            int r0 = com.google.android.gms.common.internal.safeparcel.SafeParcelReader.validateObjectHeader(r7)
+            r1 = 0
+        L6:
+            int r3 = r7.dataPosition()
+            if (r3 >= r0) goto L20
+            int r3 = com.google.android.gms.common.internal.safeparcel.SafeParcelReader.readHeader(r7)
+            int r4 = com.google.android.gms.common.internal.safeparcel.SafeParcelReader.getFieldId(r3)
+            r5 = 1
+            if (r4 == r5) goto L1b
+            com.google.android.gms.common.internal.safeparcel.SafeParcelReader.skipUnknownField(r7, r3)
+            goto L6
+        L1b:
+            long r1 = com.google.android.gms.common.internal.safeparcel.SafeParcelReader.readLong(r7, r3)
+            goto L6
+        L20:
+            com.google.android.gms.common.internal.safeparcel.SafeParcelReader.ensureAtEnd(r7, r0)
+            com.google.android.gms.fido.fido2.api.common.zzab r7 = new com.google.android.gms.fido.fido2.api.common.zzab
+            r7.<init>(r1)
+            return r7
+    }
+
+    @Override // android.os.Parcelable.Creator
+    public final /* synthetic */ java.lang.Object[] newArray(int r1) {
+            r0 = this;
+            com.google.android.gms.fido.fido2.api.common.zzab[] r1 = new com.google.android.gms.fido.fido2.api.common.zzab[r1]
+            return r1
+    }
+}
