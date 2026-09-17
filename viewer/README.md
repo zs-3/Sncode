@@ -12,8 +12,6 @@ A lightweight, standalone Java + libGDX + TeaVM web application that parses and 
 - **Java**: `11`
 - **Gradle**: `8.8`
 
-*Note on TeaVM versions*: TeaVM `0.11.0` is used for high compatibility with `gdx-teavm 1.1.0`.
-
 ---
 
 ## Project Structure
@@ -64,22 +62,50 @@ gradle -p viewer :teavm:run
 
 ---
 
-## Features & Usage
+## Method-Level Port Checklist & Status Report
 
-1. **`.nodes` File Loading**:
-   - Supports opening `.nodes` files directly via `<input type="file" accept=".nodes">`.
-   - Parses binary Stick Nodes format (versions up to 425 / build 38+).
-2. **Real Stick Nodes Rendering**:
-   - Node hierarchy, parent-child transformations, colors, thickness, segment lengths, circles, and draw order.
-3. **Stickfigure Interaction**:
-   - **Selection**: Click/tap node joints.
-   - **Limb Rotation**: Drag limb joints to rotate around parent joint.
-   - **Stretchy Nodes**: Stretchy nodes scale length dynamically on drag.
-   - **Parent Dragging**: Dragging main/parent nodes moves the figure hierarchy.
-4. **Camera Controls**:
-   - **Zoom**: Mouse wheel scrolling / pinch.
-   - **Pan**: Click and drag background.
-   - **Reset**: "Reset View" button.
+### 1. SNShapeRenderer Method Port Report
+
+| Original Method | Ported Status | Notes |
+|---|---|---|
+| `mySegment(x1, y1, x2, y2, thickness, cosAngle, sinAngle, useGradient, c1, c2)` | **Yes** | Renders quad geometry using `ImmediateModeRenderer20` |
+| `mySegmentCurved(...)` | **Yes** | Renders segment with curved joint offsets |
+| `myRoundedSegment(...)` | **Yes** | Renders rounded end-caps and quad body |
+| `myTrapezoid(...)` | **Yes** | Tessellates trapezoid quad with top/bottom thickness |
+| `myRoundedTrapezoid(...)` | **Yes** | Tessellates trapezoid quad with rounded joint caps |
+| `myTrapezoidCurved(...)` | **Yes** | Tessellates curved trapezoid segments |
+| `circle(cx, cy, radius, segments, c1, c2)` | **Yes** | Radial triangle fan tessellation |
+| `circleOutline(...)` | **Yes** | Concentric ring triangle strip tessellation |
+| `halfCircle(...)` | **Yes** | Semi-circle radial triangle fan |
+| `ellipse(...)` | **Yes** | Scaled ellipse radial fan |
+| `halfEllipse(...)` | **Yes** | Scaled semi-ellipse radial fan |
+| `polygon(...)` | **Yes** | Regular polygon N-sided fan |
+| `triangle(...)` | **Yes** | 3-vertex single triangle |
+| `triangleLine(...)` | **Yes** | Triangle outline wireframe |
+| `rectLine(...)` | **Yes** | Thick line segment quad |
+
+### 2. StickNode Field & Method Port Report
+
+| Original Method / Field | Ported Status | Notes |
+|---|---|---|
+| `LIMB_SEGMENT / LIMB_CIRCLE / LIMB_CURVE / LIMB_POLY` | **Yes** | Node limb types ported |
+| `drawLimb(...)` / `drawLimbCulled(...)` | **Yes** | Dispatches to `SNShapeRenderer` drawing methods |
+| `drawLimbAA(...)` | **Yes** | Anti-aliased multi-pass growth rendering |
+| `drawPolyfill(...)` | **Yes** | Polyfill triangulation rendering |
+| `readData(in)` | **Yes** | Parses all node options, colors, curves, and children |
+| `updateTransforms(parentX, parentY, parentAngle)` | **Yes** | Updates world position & hierarchy orientation |
+| `node_type` / `is_static` / `is_stretchy` / `is_smart_stretch` | **Yes** | Node options preserved in `StickNode` |
+| `trapezoidThickness1` / `trapezoidThickness2` / `trapezoidRatio` | **Yes** | Trapezoid geometry properties preserved |
+| `curveRadius` / `segmentCurveCirculization` | **Yes** | Curve geometry properties preserved |
+
+### 3. Stickfigure Method Port Report
+
+| Original Method | Ported Status | Notes |
+|---|---|---|
+| `readData(DataInputStream)` | **Yes** | Full version/build binary parser |
+| `collectDrawOrder(...)` | **Yes** | Populates draw-ordered node list |
+| `updateTransforms(...)` | **Yes** | Recursively computes world transforms |
+| `drawLimbs(...)` | **Yes** | Orchestrates rendering of all nodes in draw order |
 
 ---
 
@@ -111,21 +137,3 @@ Include `app.js` and use `window.StickNodesViewer`:
     .then(buf => viewer.load(new Uint8Array(buf)));
 </script>
 ```
-
----
-
-## Ported Source Inventory & Stubs
-
-| Ported Component | Origin Path in `sticknodes-java/` | Notes / Adaptations |
-|---|---|---|
-| `Stickfigure` | `org/fortheloss/sticknodes/stickfigure/Stickfigure.java` | Cleaned `.nodes` binary reader & hierarchy tree updater |
-| `StickNode` | `org/fortheloss/sticknodes/stickfigure/StickNode.java` | Extracted node data model, limb types, transforms & drag rotation/stretch logic |
-| `SNShapeRenderer` | `org/fortheloss/sticknodes/SNShapeRenderer.java` | WebGL `ImmediateModeRenderer20` quad/triangle batching without Android/desktop dependencies |
-| `NodeDigger` | `org/fortheloss/sticknodes/NodeDigger.java` | Simplified spatial hit testing for WebGL viewport |
-
----
-
-## Verification & Pre-Commit Steps
-
-- `./gradlew -p viewer :teavm:buildJavaScript` compiles successfully with 0 errors.
-- Web app output verified in `viewer/teavm/build/dist/webapp/`.
